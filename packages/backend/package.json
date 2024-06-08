@@ -1,0 +1,48 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "type": "module",
+  "module": "src/index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "bun --smol run src/index.ts",
+    "dev": "bun --smol run --watch src/index.ts",
+    "generate": "bun drizzle-kit generate:pg"
+  },
+  "exports": {
+    "./*": "./src/*.ts"
+  },
+  "dependencies": {
+    "@elysiajs/cors": "^1.0.2",
+    "asposepdfcloud": "^24.5.0",
+    "asposepdfnodejs": "^24.5.0",
+    "bmp-js": "^0.1.0",
+    "docx": "^8.5.0",
+    "docxml": "^5.15.1",
+    "drizzle-orm": "^0.30.10",
+    "elysia": "latest",
+    "jszip": "^3.10.1",
+    "mammoth": "^1.7.2",
+    "office-text-extractor": "^3.0.3",
+    "openai": "^4.31.0",
+    "pako": "^2.1.0",
+    "pdf-export-images": "^1.2.0",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^4.0.379",
+    "pngjs": "^7.0.0",
+    "postgres": "^3.4.4",
+    "rimraf": "^5.0.7",
+    "telegraf": "^4.16.3",
+    "tesseract.js": "^5.1.0",
+    "textract": "^2.5.0",
+    "tiktoken": "^1.0.15",
+    "znv": "^0.4.0"
+  },
+  "devDependencies": {
+    "@types/pako": "^2.0.3",
+    "@types/pngjs": "^6.0.5",
+    "@types/textract": "^2.4.5",
+    "bun-types": "latest",
+    "drizzle-kit": "0.21.0"
+  }
+}

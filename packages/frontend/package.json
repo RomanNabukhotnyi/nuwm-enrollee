@@ -1,0 +1,35 @@
+{
+  "name": "frontend",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
+  },
+  "devDependencies": {
+    "@skeletonlabs/skeleton": "^2.9.1",
+    "@skeletonlabs/tw-plugin": "^0.4.0",
+    "@sveltejs/adapter-auto": "^3.0.0",
+    "@sveltejs/kit": "^2.0.0",
+    "@sveltejs/vite-plugin-svelte": "^3.0.0",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.38",
+    "svelte": "next",
+    "svelte-check": "^3.6.0",
+    "tailwindcss": "^3.4.3",
+    "tslib": "^2.4.1",
+    "typescript": "^5.0.0",
+    "vite": "^5.0.3",
+    "backend": "workspace:*"
+  },
+  "type": "module",
+  "dependencies": {
+    "@elysiajs/eden": "^1.0.11",
+    "@uppy/core": "^3.10.0",
+    "@uppy/dashboard": "^3.8.0",
+    "@uppy/xhr-upload": "^3.6.4",
+    "iconify-icon": "^2.0.0"
+  }
+}

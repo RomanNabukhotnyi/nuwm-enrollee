@@ -1,0 +1,24 @@
+{
+  "name": "nuwm-enrollee",
+  "type": "module",
+  "private": true,
+  "workspaces": [
+    "packages/backend",
+    "packages/frontend"
+  ],
+  "scripts": {
+    "deploy:be": "fly deploy --config packages/backend/fly.toml  --dockerfile packages/backend/Dockerfile",
+    "lint": "bunx @biomejs/biome check .",
+    "lint:fix": "bunx @biomejs/biome check --apply ."
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.6.3",
+    "@flydotio/dockerfile": "^0.5.7",
+    "@skeletonlabs/skeleton": "^2.9.1",
+    "@skeletonlabs/tw-plugin": "^0.4.0",
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
