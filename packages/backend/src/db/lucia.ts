@@ -1,28 +1,11 @@
 import { Lucia } from 'lucia';
 import { DrizzlePostgreSQLAdapter } from '@lucia-auth/adapter-drizzle';
-import { pgTable, timestamp, text, integer } from 'drizzle-orm/pg-core';
 import { db } from '.';
 import { GitHub } from 'arctic';
 import env from '../env';
+import { sessionsTable, usersTable } from './schema';
 
 export const github = new GitHub(env.GITHUB_CLIENT_ID, env.GITHUB_CLIENT_SECRET);
-
-export const usersTable = pgTable('user', {
-  id: text('id').primaryKey(),
-  githubId: integer('github_id').notNull(),
-  username: text('username').notNull(),
-});
-
-export const sessionsTable = pgTable('session', {
-  id: text('id').primaryKey(),
-  userId: text('user_id')
-    .notNull()
-    .references(() => usersTable.id),
-  expiresAt: timestamp('expires_at', {
-    withTimezone: true,
-    mode: 'date',
-  }).notNull(),
-});
 
 const adapter = new DrizzlePostgreSQLAdapter(db, sessionsTable, usersTable);
 

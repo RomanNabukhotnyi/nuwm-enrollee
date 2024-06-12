@@ -6,8 +6,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "bun --smol run src/index.ts",
+    "build": "bun --smol build src/index.ts --outdir ./out --target bun",
     "dev": "bun --smol run --watch src/index.ts",
-    "generate": "bun drizzle-kit generate:pg"
+    "generate": "bun drizzle-kit generate"
   },
   "exports": {
     "./*": "./src/*.ts"

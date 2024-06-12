@@ -3,7 +3,7 @@ import { cors } from '@elysiajs/cors';
 import { Telegraf } from 'telegraf';
 import openai from './openai';
 import { db } from './db';
-import { documentSections, documents } from './db/schema';
+import { documentSections, documents, usersTable } from './db/schema';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import env from './env';
 import { eq, sql } from 'drizzle-orm';
@@ -12,7 +12,7 @@ import { processFile } from './utils/files';
 import { cleanText } from './utils/text';
 import { get_encoding } from 'tiktoken';
 import { OAuth2RequestError, generateState } from 'arctic';
-import { github, lucia, usersTable } from './db/lucia';
+import { github, lucia } from './db/lucia';
 import { type Session, type User, generateIdFromEntropySize, verifyRequestOrigin } from 'lucia';
 
 interface GitHubUser {
@@ -130,7 +130,7 @@ const app = new Elysia()
         const sessionCookie = lucia.createSessionCookie(session.id);
         cookie[sessionCookie.name].set(sessionCookie);
       }
-      return redirect('/', 302);
+      return redirect('https://nuwm-enrollee-fe.fly.dev', 302);
     } catch (e) {
       // the specific error message depends on the provider
       if (e instanceof OAuth2RequestError) {
@@ -140,6 +140,15 @@ const app = new Elysia()
       // some other error
       return error(500);
     }
+  })
+  .get('/me', async ({ user, error }) => {
+    if (!user) {
+      return error(401);
+    }
+
+    return {
+      user,
+    };
   })
   .post(
     '/upload',
