@@ -1,26 +1,26 @@
 <script lang="ts">
   import './styles.css';
-  import 'iconify-icon';
-  import { AppShell } from '@skeletonlabs/skeleton';
+  import Nav from './nav.svelte';
+  import FileUp from 'lucide-svelte/icons/file-up';
+  import Files from 'lucide-svelte/icons/files';
 </script>
 
-<AppShell slotSidebarLeft="bg-surface-500/5 w-56 p-4">
-  <!-- (header) -->
-  <svelte:fragment slot="sidebarLeft">
-    <!-- Insert the list: -->
-    <nav class="list-nav">
-      <ul>
-        <li><a href="/">Upload</a></li>
-        <li><a href="/files">Files</a></li>
-      </ul>
-    </nav>
-    <!-- --- -->
-  </svelte:fragment>
-  <!-- (sidebarRight) -->
-  <!-- (pageHeader) -->
-  <!-- Router Slot -->
+<div class="h-full flex">
+  <div class="min-w-[200px] max-w-[200px] border-r">
+    <Nav
+      routes={[
+        {
+          title: 'Upload',
+          href: '/',
+          icon: FileUp,
+        },
+        {
+          title: 'Files',
+          href: '/files',
+          icon: Files,
+        },
+      ]}
+    />
+  </div>
   <slot />
-  <!-- ---- / ---- -->
-  <!-- (pageFooter) -->
-  <!-- (footer) -->
-</AppShell>
+</div>

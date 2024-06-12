@@ -1,7 +1,7 @@
 // client.ts
 import { treaty } from "@elysiajs/eden";
-import type { App } from "backend/index";
+import type { App } from "../../../backend/src/index";
 
-const api = treaty<App>("localhost:3000");
+const api = treaty<App>("https://nuwm-enrollee-be.fly.dev");
 
 export default api;
