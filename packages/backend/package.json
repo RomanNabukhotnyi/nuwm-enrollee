@@ -5,7 +5,7 @@
   "module": "src/index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "bun --smol run src/index.ts",
+    "start": "bun --smol run out/index.js",
     "build": "bun --smol build src/index.ts --outdir ./out --target bun",
     "dev": "NODE_ENV=development bun --smol run --watch src/index.ts",
     "generate": "bun drizzle-kit generate"
