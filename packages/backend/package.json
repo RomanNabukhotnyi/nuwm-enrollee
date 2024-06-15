@@ -5,8 +5,8 @@
   "module": "src/index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "tsx run out/index.js",
-    "build": "bun build src/index.ts --outdir ./out --target node",
+    "start": "bun --smol run out/index.js",
+    "build": "bun --smol build src/index.ts --outdir ./out --target bun",
     "dev": "NODE_ENV=development bun --smol run --watch src/index.ts",
     "generate": "bun drizzle-kit generate"
   },
@@ -40,7 +40,6 @@
     "tesseract.js": "^5.1.0",
     "textract": "^2.5.0",
     "tiktoken": "^1.0.15",
-    "tsx": "^4.15.5",
     "znv": "^0.4.0"
   },
   "devDependencies": {

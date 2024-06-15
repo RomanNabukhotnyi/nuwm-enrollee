@@ -16,6 +16,7 @@ import { type Session, type User, generateIdFromEntropySize } from 'lucia';
 import { numTokens } from './utils/tokens';
 import { PromisePipeline } from './utils/pipeline';
 import { PromisePool } from './utils/promise-pool';
+import 'dotenv/config';
 
 interface GitHubUser {
   id: number;
