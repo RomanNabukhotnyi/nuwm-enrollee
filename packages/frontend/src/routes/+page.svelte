@@ -14,7 +14,13 @@
       },
     })
       .use(Dashboard, { inline: true, target: '#uppy-dashboard' })
-      .use(XHR, { endpoint: 'http://localhost:3000/upload' });
+      .use(XHR, {
+        endpoint:
+          process.env.NODE_ENV === 'development'
+            ? 'http://localhost:3000/upload'
+            : 'https://nuwm-enrollee-be.fly.dev/upload',
+          withCredentials: true,
+      });
   });
 </script>
 

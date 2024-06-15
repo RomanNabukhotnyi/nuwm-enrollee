@@ -10,10 +10,12 @@ import { eq, sql } from 'drizzle-orm';
 import JSZip from 'jszip';
 import { processFile } from './utils/files';
 import { cleanText } from './utils/text';
-import { get_encoding } from 'tiktoken';
 import { OAuth2RequestError, generateState } from 'arctic';
 import { github, lucia } from './db/lucia';
-import { type Session, type User, generateIdFromEntropySize, verifyRequestOrigin } from 'lucia';
+import { type Session, type User, generateIdFromEntropySize } from 'lucia';
+import { numTokens } from './utils/tokens';
+import { PromisePipeline } from './utils/pipeline';
+import { PromisePool } from './utils/promise-pool';
 
 interface GitHubUser {
   id: number;
@@ -23,6 +25,10 @@ interface GitHubUser {
 await migrate(db, {
   migrationsFolder: './drizzle',
 });
+
+// const pipeline = new PromisePipeline('files', 10);
+
+const pool = new PromisePool(1, 100, 1024);
 
 const app = new Elysia()
   .derive(
@@ -76,7 +82,13 @@ const app = new Elysia()
       };
     },
   )
-  .use(cors())
+  .use(
+    cors({
+      origin: () => true,
+      credentials: true,
+      allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+    }),
+  )
   .get('/sign-in', async ({ cookie: { github_oauth_state }, redirect }) => {
     const state = generateState();
     const url = await github.createAuthorizationURL(state);
@@ -115,7 +127,11 @@ const app = new Elysia()
         const session = await lucia.createSession(existingUser.id, {});
         const sessionCookie = lucia.createSessionCookie(session.id);
 
-        cookie[sessionCookie.name].set(sessionCookie);
+        cookie[sessionCookie.name].set({
+          value: sessionCookie.value,
+          ...sessionCookie.attributes,
+          sameSite: 'none',
+        });
       } else {
         const userId = generateIdFromEntropySize(10); // 16 characters long
 
@@ -128,9 +144,14 @@ const app = new Elysia()
 
         const session = await lucia.createSession(userId, {});
         const sessionCookie = lucia.createSessionCookie(session.id);
-        cookie[sessionCookie.name].set(sessionCookie);
+        cookie[sessionCookie.name].set({
+          value: sessionCookie.value,
+          ...sessionCookie.attributes,
+          sameSite: 'none',
+        });
       }
-      return redirect('https://nuwm-enrollee-fe.fly.dev', 302);
+
+      return redirect(env.FRONTEND_URL, 302);
     } catch (e) {
       // the specific error message depends on the provider
       if (e instanceof OAuth2RequestError) {
@@ -171,12 +192,10 @@ const app = new Elysia()
           const name = file.name.split('/').pop() as string;
           const type = name.split('.').pop() as string;
           const buffer = await file.async('nodebuffer');
-          console.log('file', {
-            name,
-            type,
-          });
-          processFile(name, type, buffer).catch((error) => {
-            console.error(`Error processing text in file: ${name}`, error);
+          pool.add(async () => {
+            await processFile(name, type, buffer).catch((error) => {
+              console.error(`Error processing text in file: ${name}`, error);
+            });
           });
         });
 
@@ -185,12 +204,10 @@ const app = new Elysia()
         const name = file.name;
         const type = name.split('.').pop() as string;
         const buffer = Buffer.from(data);
-        console.log('file', {
-          name,
-          type,
-        });
-        processFile(name, type, buffer).catch((error) => {
-          console.error(`Error processing text in file: ${name}`, error);
+        pool.add(async () => {
+          processFile(name, type, buffer).catch((error) => {
+            console.error(`Error processing text in file: ${name}`, error);
+          });
         });
       }
 
@@ -247,73 +264,115 @@ const bot = new Telegraf(env.TELEGRAM_TOKEN);
 
 bot.start((ctx) => ctx.reply('Welcome!'));
 
+const TOKEN_BUDGET = 4096 - 500;
+
+const systemMessage = `
+  Ви — корисний помічник для абітурієнта Національного університету водного господарства та природокористування. 
+  Коли вам надається секції, ви відповідаєте на запитання, використовуючи спочатку цю інформацію, і ви ЗАВЖДИ форматуєте свої відповіді у форматі Markdown.
+  При можливості згадуйте та посилайтеся на приймальну комісію НУВГП або просто на Національний університет водного господарства та природокористування, якщо це доречно. 
+  Відповідь повинна бути не надто довгою, не більше 3000 символів. 
+  Якщо ви не впевнені і відповідь не прописана явно в наданих секціях, ви можете спробувати знайти відповідь десь, але якщо не знайдено, то говорите: "Вибачте, але я молодий чат-бот і поки не знаю відповіді. Будь ласка, задайте уточнене питання або зверніться до приймальної комісії НУВГП (м. Рівне, вул. М. Карнаухова, 53а, 7-й корпус НУВГП, ауд. 729, +38 (068) 477-83-66). Або пошукайте інформацію на нашому сайті https://nuwm.edu.ua/vstup".
+  `.replace(/\n/g, '');
+
 bot.on('text', async (ctx) => {
-  const {
-    data: [{ embedding }],
-  } = await openai.embeddings.create({
-    model: 'text-embedding-3-small',
-    input: [ctx.message.text],
-  });
+  ctx.sendChatAction('typing');
 
-  const embeddingString = JSON.stringify(embedding);
+  try {
+    const query = cleanText(ctx.message.text);
 
-  const sections = await db
-    .select()
-    .from(documentSections)
-    .where(sql`${documentSections.embedding} <#> ${embeddingString} < 0.8`)
-    .orderBy(sql`${documentSections.embedding} <#> ${embeddingString}`)
-    .limit(5);
+    const {
+      data: [{ embedding }],
+    } = await openai.embeddings.create({
+      model: 'text-embedding-3-small',
+      input: [query],
+    });
 
-  const injectedSections =
-    sections.length > 0 ? sections.map((section) => section.content).join() : 'No documents found';
+    const embeddingString = JSON.stringify(embedding);
 
-  let systemMessage = `
-		You're an AI assistant who answers questions about documents.
-		You're a chat bot, so keep your replies succinct.
-		You're only allowed to use the documents below to answer the question.
-		If the question isn't related to these documents or if the information isn't available in the below documents, say:
-		"Вибачте, я не зміг знайти жодної інформації на цю тему."
-		Do not go off topic.
-		Documents:
-		${injectedSections}
-	`;
+    const sections = await db
+      .select()
+      .from(documentSections)
+      .where(sql`${documentSections.embedding} <#> ${embeddingString} < 0.7`)
+      .orderBy(sql`${documentSections.embedding} <#> ${embeddingString}`)
+      .limit(5);
 
-  const enc = get_encoding('cl100k_base');
-  const tokens = enc.encode(systemMessage);
-  // Get the first 3000 tokens
-  const tokensChunk = tokens.slice(0, 3000);
-  const chunk = enc.decode(tokensChunk);
-  const buffer = Buffer.from(chunk);
-  systemMessage = buffer.toString('utf-8');
+    // console.log('sections', sections.length);
 
-  const question = cleanText(ctx.message.text);
-  const tokensQuestion = enc.encode(question);
-  // if the question is greater than 150 tokens, throw an error
-  if (tokensQuestion.length > 150) {
-    ctx.reply('Запит занадто довгий. Будь ласка, введіть коротший запит.');
-    return;
+    // const injectedSections =
+    //   sections.length > 0 ? sections.map((section) => section.content).join() : 'No documents found';
+
+    // console.log('injectedSections', injectedSections);
+
+    // const tokensPerSection = sections.length > 0 ? Math.floor(12000 / sections.length) : 12000;
+
+    // const context = sections
+    //   .map((section, index) => {
+    //     // const enc = get_encoding('cl100k_base');
+    //     // const tokens = enc.encode(section.content);
+    //     // const tokensChunk = tokens.slice(0, tokensPerSection);
+    //     // const chunk = enc.decode(tokensChunk);
+    //     // const buffer = Buffer.from(chunk);
+    //     // section.content = buffer.toString('utf-8');
+    //     // enc.free();
+
+    //     return section.content;
+    //   })
+    //   .join('');
+
+    const introduction = 'Використовуй нижченаведені секції для відповіді на запитання.';
+    const question = `\n\nЗапитання: ${query}`;
+    let message = introduction;
+    for (const section of sections) {
+      const nextSection = `\n\nSection:\n"""\n${section.content}"""\n`;
+      if (numTokens(message + nextSection + question) > TOKEN_BUDGET) {
+        break;
+      }
+
+      message += nextSection;
+    }
+    message += question;
+
+    // const enc = get_encoding('cl100k_base');
+
+    // const tokensQuestion = enc.encode(question);
+    // if the question is greater than 150 tokens, throw an error
+    // if (tokensQuestion.length > 150) {
+    //   ctx.reply('Запит занадто довгий. Будь ласка, введіть коротший запит.');
+    //   return;
+    // }
+
+    // Free the memory used by the encoder
+    // enc.free();
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-3.5-turbo',
+      messages: [
+        {
+          role: 'system',
+          content: systemMessage,
+        },
+        {
+          role: 'user',
+          content: message,
+        },
+      ],
+      temperature: 0,
+      // top_p: 1,
+      // frequency_penalty: 0,
+      // presence_penalty: 0,
+      // max_tokens: 1500,
+      // n: 1,
+    });
+
+    const answer = response.choices[0].message.content as string;
+
+    ctx.reply(answer, {
+      parse_mode: 'Markdown',
+    });
+  } catch (error) {
+    console.error('Error processing message:', error);
+    ctx.reply('Вибачте, сталася помилка під час обробки вашого запиту. Будь ласка, спробуйте ще раз.');
   }
-
-  // Free the memory used by the encoder
-  enc.free();
-
-  const response = await openai.chat.completions.create({
-    model: 'gpt-3.5-turbo',
-    messages: [
-      {
-        role: 'system',
-        content: systemMessage,
-      },
-      {
-        role: 'user',
-        content: question,
-      },
-    ],
-  });
-
-  const message = response.choices[0].message.content as string;
-
-  ctx.reply(message);
 });
 
 bot.launch(() => {

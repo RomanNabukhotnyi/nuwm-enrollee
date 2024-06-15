@@ -15,7 +15,7 @@
   };
 </script>
 
-<main class="container mx-auto p-8 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+<main class="container mx-auto p-8 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 overflow-y-auto">
   {#each data.files as file}
     <div
       class="relative bg-white shadow-md p-4 rounded-md max-w-sm hover:shadow-lg transition duration-300 ease-in-out group"

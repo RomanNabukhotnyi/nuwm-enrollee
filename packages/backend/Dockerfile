@@ -12,27 +12,25 @@ WORKDIR /app
 # Set production environment
 ENV NODE_ENV="production"
 
-FROM base AS install
-RUN mkdir -p /temp/dev
-COPY packages/backend/package.json bun.lockb /temp/dev/
-RUN cd /temp/dev && bun install --frozen-lockfile
+# Throw-away build stage to reduce size of final image
+FROM base as build
 
-# install with --production (exclude devDependencies)
-RUN mkdir -p /temp/prod
-COPY packages/backend/package.json bun.lockb /temp/prod/
-RUN cd /temp/prod && bun install --frozen-lockfile --production
+# Install packages needed to build node modules
+RUN apt-get update -qq && \
+    apt-get install --no-install-recommends -y build-essential pkg-config python-is-python3
 
-# copy node_modules from temp directory
-# then copy all (non-ignored) project files into the image
-FROM base AS prerelease
-COPY --from=install /temp/dev/node_modules node_modules
-COPY packages/backend ./
+# Copy application code
+COPY --link packages/backend ./
+# Install node modules
+COPY --link bun.lockb ./
+RUN bun install --ci
 
-ENV NODE_ENV=production
-RUN bun run build
+# Final stage for app image
+FROM base
 
-# copy production dependencies and source code into final image
-FROM base AS release
-COPY --from=prerelease /usr/src/app/out/index.js .
+# Copy built application
+COPY --from=build /app /app
 
-ENTRYPOINT [ "bun", "run", "index.js" ]
+# Start the server by default, this can be overwritten at runtime
+EXPOSE 3000
+CMD [ "bun", "run", "start" ]

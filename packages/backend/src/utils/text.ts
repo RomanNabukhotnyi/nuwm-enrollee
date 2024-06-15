@@ -1,6 +1,6 @@
 // Clean the text by removing special characters, extra whitespace and newlines
 export const cleanText = (text: string): string => {
-  const regex = /[^a-zA-Zа-яА-Я0-9.,!?;:() \n\r\t-]/g;
+  const regex = /[^a-zA-Zа-яА-ЯїЇєЄґҐіІ0-9.,!?;:() \n\r\t-]/g;
   let refinedText = text;
   refinedText = refinedText.replace(regex, '');
   refinedText = refinedText.replace(/\s{2,}/g, ' ');

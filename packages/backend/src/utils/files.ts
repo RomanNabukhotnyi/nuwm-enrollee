@@ -6,15 +6,17 @@ import { getDocument } from 'pdfjs-dist';
 import type { TextItem } from 'pdfjs-dist/types/src/display/api';
 import { getTextFromImagesInDocx, getTextFromImagesInPDF } from './images';
 import { PromisePipeline } from './pipeline';
-import { get_encoding } from 'tiktoken';
+import { encoding_for_model } from 'tiktoken';
 import Tesseract from 'tesseract.js';
 import { cleanText } from './text';
+import { PromisePool } from './promise-pool';
 
-const MAX_CHUNK_SIZE = 8000;
-const MIN_CHUNK_SIZE = 500;
+const CHUNK_SIZE = 800;
+const OVERLAP_SIZE = 400;
 
-// Create a pipeline to process text in parallel with a rate limit of 2950 per minute
-const pipeline = new PromisePipeline(2950);
+const pool = new PromisePool(3, 2500, 1024);
+
+// const pipeline = new PromisePipeline('chunks',500, 2500);
 
 const extractor = getTextExtractor();
 
@@ -26,15 +28,23 @@ const getContent = async (type: string, buffer: Buffer) => {
     const data = await Tesseract.recognize(buffer, 'ukr', {});
     content += data.data.text;
   } else if (type === 'pdf') {
-    const doc = await getDocument(Uint8Array.from(buffer)).promise;
+    const doc = await getDocument({
+      data: Uint8Array.from(buffer),
+      verbosity: 0,
+    }).promise;
     const numPages = doc.numPages;
 
+    let strings = [];
     for (let i = 1; i <= numPages; i++) {
       const page = await doc.getPage(i);
       const textContent = await page.getTextContent();
-      const strings = textContent.items.map((item) => (item as TextItem).str);
-      content += `${strings.join(' ')} `;
+      strings.push(...textContent.items.map((item) => (item as TextItem).str));
     }
+    content += strings.join(' ');
+
+    // Free the memory used by the document
+    strings = [];
+    doc.cleanup();
 
     content += await getTextFromImagesInPDF(buffer);
   } else if (type === 'docx') {
@@ -56,12 +66,12 @@ export const processFile = async (name: string, type: string, buffer: Buffer) =>
 
   const cleanedContent = cleanText(content);
 
-  const enc = get_encoding('cl100k_base');
+  const enc = encoding_for_model('gpt-3.5-turbo');
   const tokens = enc.encode(cleanedContent);
-  const chunks = [];
+  const chunks: string[] = [];
 
-  for (let i = 0; i < tokens.length; i += MAX_CHUNK_SIZE) {
-    const tokensChunk = tokens.slice(i, i + MAX_CHUNK_SIZE);
+  for (let i = 0; i < tokens.length; i += CHUNK_SIZE - OVERLAP_SIZE) {
+    const tokensChunk = tokens.slice(i, i + CHUNK_SIZE);
     const chunk = enc.decode(tokensChunk);
     const buffer = Buffer.from(chunk);
     const textChunk = buffer.toString('utf-8');
@@ -72,9 +82,9 @@ export const processFile = async (name: string, type: string, buffer: Buffer) =>
   enc.free();
 
   // Ensure the last chunk has at least 500 characters
-  if (chunks.length > 1 && chunks[chunks.length - 1].length < MIN_CHUNK_SIZE) {
-    chunks.pop();
-  }
+  // if (chunks.length > 1 && chunks[chunks.length - 1].length < CHUNK_SIZE) {
+  //   chunks.pop();
+  // }
 
   if (chunks.length === 0) {
     return;
@@ -89,25 +99,22 @@ export const processFile = async (name: string, type: string, buffer: Buffer) =>
     ])
     .returning();
 
-  for (const chunk of chunks) {
-    pipeline.add(async () => {
-      console.log('chunk', chunk.length);
+  for (let i = 0; i < chunks.length; i++) {
+    pool.add(async () => {
       const {
         data: [{ embedding }],
       } = await openai.embeddings.create({
         model: 'text-embedding-3-small',
-        input: chunk,
+        input: chunks[i],
       });
 
       await db.insert(documentSections).values([
         {
           documentId: document.id,
-          content: chunk,
+          content: chunks[i],
           embedding,
         },
       ]);
     });
   }
-
-  console.log(`Text processed in file: ${name}`);
 };

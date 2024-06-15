@@ -7,6 +7,7 @@ const env = parseEnv(process.env, {
   TELEGRAM_TOKEN: z.string(),
   GITHUB_CLIENT_ID: z.string(),
   GITHUB_CLIENT_SECRET: z.string(),
+  FRONTEND_URL: z.string().url(),
 });
 
 export default env;
