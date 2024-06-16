@@ -4,8 +4,7 @@ import { documentSections, documents } from '../db/schema';
 import openai from '../openai';
 import { getDocument } from 'pdfjs-dist';
 import type { TextItem } from 'pdfjs-dist/types/src/display/api';
-import { getTextFromImagesInDocx, getTextFromImagesInPDF } from './images';
-import { PromisePipeline } from './pipeline';
+import { getTextFromImagesInDocx, getTextFromImagesInPDFPage } from './images';
 import { encoding_for_model } from 'tiktoken';
 import Tesseract from 'tesseract.js';
 import { cleanText } from './text';
@@ -34,19 +33,18 @@ const getContent = async (type: string, buffer: Buffer) => {
     }).promise;
     const numPages = doc.numPages;
 
-    let strings = [];
+    let strings: string[] = [];
     for (let i = 1; i <= numPages; i++) {
       const page = await doc.getPage(i);
       const textContent = await page.getTextContent();
-      strings.push(...textContent.items.map((item) => (item as TextItem).str));
+      const textFromImages = await getTextFromImagesInPDFPage(page);
+      strings.push(...textContent.items.map((item) => (item as TextItem).str), textFromImages);
     }
     content += strings.join(' ');
 
     // Free the memory used by the document
     strings = [];
     doc.cleanup();
-
-    content += await getTextFromImagesInPDF(buffer);
   } else if (type === 'docx') {
     content = await extractor.extractText({
       input: buffer,
@@ -63,6 +61,8 @@ const getContent = async (type: string, buffer: Buffer) => {
 
 export const processFile = async (name: string, type: string, buffer: Buffer) => {
   const content = await getContent(type, buffer);
+
+  console.log('content:', content);
 
   const cleanedContent = cleanText(content);
 

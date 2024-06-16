@@ -1,5 +1,6 @@
 import { parseEnv } from 'znv';
 import { z } from 'zod';
+import 'dotenv/config';
 
 const env = parseEnv(process.env, {
   DATABASE_URL: z.string().url(),

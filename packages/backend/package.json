@@ -5,9 +5,9 @@
   "module": "src/index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "bun --smol run src/index.ts",
-    "build": "bun --smol build src/index.ts --outdir ./out --target bun",
-    "dev": "NODE_ENV=development bun --smol run --watch src/index.ts",
+    "start": "tsx dist/index.cjs",
+    "build": "NODE_ENV=production tsup",
+    "dev": "tsup --watch --onSuccess \"tsx dist/index.cjs\"",
     "generate": "bun drizzle-kit generate"
   },
   "exports": {
@@ -16,6 +16,8 @@
   "dependencies": {
     "@elysiajs/cors": "^1.0.2",
     "@elysiajs/cron": "^1.0.3",
+    "@hono/node-server": "^1.11.3",
+    "@hono/zod-validator": "^0.2.2",
     "@lucia-auth/adapter-drizzle": "^1.0.7",
     "arctic": "^1.9.1",
     "asposepdfcloud": "^24.5.0",
@@ -27,9 +29,11 @@
     "drizzle-orm": "^0.30.10",
     "elysia": "latest",
     "fs-capacitor": "^8.0.0",
+    "hono": "^4.4.6",
     "jszip": "^3.10.1",
     "lucia": "^3.2.0",
     "mammoth": "^1.7.2",
+    "node-cron": "^3.0.3",
     "office-text-extractor": "^3.0.3",
     "openai": "^4.31.0",
     "pako": "^2.1.0",
@@ -44,14 +48,17 @@
     "textract": "^2.5.0",
     "tiktoken": "^1.0.15",
     "tsx": "^4.15.5",
-    "znv": "^0.4.0"
+    "znv": "^0.4.0",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@types/node-cron": "^3.0.11",
     "@types/pako": "^2.0.3",
     "@types/pngjs": "^6.0.5",
     "@types/textract": "^2.4.5",
     "bun-types": "latest",
     "drizzle-kit": "0.21.0",
+    "tsup": "^8.1.0",
     "typescript": "^5.4.5"
   }
 }
