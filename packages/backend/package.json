@@ -5,7 +5,7 @@
   "module": "src/index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "bun --smol run out/index.js",
+    "start": "bun --smol run src/index.ts",
     "build": "bun --smol build src/index.ts --outdir ./out --target bun",
     "dev": "NODE_ENV=development bun --smol run --watch src/index.ts",
     "generate": "bun drizzle-kit generate"
@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@elysiajs/cors": "^1.0.2",
+    "@elysiajs/cron": "^1.0.3",
     "@lucia-auth/adapter-drizzle": "^1.0.7",
     "arctic": "^1.9.1",
     "asposepdfcloud": "^24.5.0",
@@ -22,8 +23,10 @@
     "bmp-js": "^0.1.0",
     "docx": "^8.5.0",
     "docxml": "^5.15.1",
+    "dotenv": "^16.4.5",
     "drizzle-orm": "^0.30.10",
     "elysia": "latest",
+    "fs-capacitor": "^8.0.0",
     "jszip": "^3.10.1",
     "lucia": "^3.2.0",
     "mammoth": "^1.7.2",
@@ -40,6 +43,7 @@
     "tesseract.js": "^5.1.0",
     "textract": "^2.5.0",
     "tiktoken": "^1.0.15",
+    "tsx": "^4.15.5",
     "znv": "^0.4.0"
   },
   "devDependencies": {
@@ -47,6 +51,7 @@
     "@types/pngjs": "^6.0.5",
     "@types/textract": "^2.4.5",
     "bun-types": "latest",
-    "drizzle-kit": "0.21.0"
+    "drizzle-kit": "0.21.0",
+    "typescript": "^5.4.5"
   }
 }
