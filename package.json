@@ -31,6 +31,9 @@
     "supportedArchitectures": {
       "os": [
         "linux"
+      ],
+      "cpu": [
+        "x64"
       ]
     }
   }
