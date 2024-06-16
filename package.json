@@ -7,8 +7,8 @@
     "packages/frontend"
   ],
   "scripts": {
-    "build:be": "cd packages/backend && bun run build",
-    "start:be": "cd packages/backend && bun run start",
+    "build:be": "cd packages/backend && pnpm run build",
+    "start:be": "cd packages/backend && pnpm run start",
     "dev": "turbo dev",
     "deploy:be": "fly deploy --config packages/backend/fly.toml  --dockerfile packages/backend/Dockerfile",
     "deploy:fe": "fly deploy --config packages/frontend/fly.toml  --dockerfile packages/frontend/Dockerfile",
