@@ -65,7 +65,7 @@ const main = async () => {
         .from(documentSections)
         .where(sql`${documentSections.embedding} <#> ${embeddingString} < 0.7`)
         .orderBy(sql`${documentSections.embedding} <#> ${embeddingString}`)
-        .limit(5);
+        .limit(10);
 
       const introduction = 'Використовуй нижченаведені секції для відповіді на запитання.';
       const question = `\n\nЗапитання: ${query}`;
