@@ -62,8 +62,6 @@ const getContent = async (type: string, buffer: Buffer) => {
 export const processFile = async (name: string, type: string, buffer: Buffer) => {
   const content = await getContent(type, buffer);
 
-  console.log('content:', content);
-
   const cleanedContent = cleanText(content);
 
   const enc = encoding_for_model('gpt-3.5-turbo');

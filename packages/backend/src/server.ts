@@ -182,6 +182,18 @@ const route = app
       return ctx.json({ error: 'Error uploading file' }, 500);
     }
   })
+  .get('/files', async (ctx) => {
+    const user = ctx.get('user');
+
+    if (!user) {
+      return ctx.json({ error: 'Unauthorized' }, 401);
+    }
+
+    const addDocuments = await db.select().from(documents);
+    return ctx.json({
+      items: addDocuments,
+    });
+  })
   .delete('/files/:id', async (ctx) => {
     const user = ctx.get('user');
     if (!user) {

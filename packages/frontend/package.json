@@ -32,6 +32,7 @@
     "@uppy/xhr-upload": "^3.6.4",
     "bits-ui": "^0.21.10",
     "clsx": "^2.1.1",
+    "hono": "^4.4.6",
     "iconify-icon": "^2.0.0",
     "lucide-svelte": "^0.394.0",
     "paneforge": "^0.0.4",

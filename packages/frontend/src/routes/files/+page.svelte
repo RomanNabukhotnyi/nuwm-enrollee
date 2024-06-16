@@ -6,12 +6,9 @@
   };
 
   const deleteFile = (id: string) => {
-    api
-      .files({ id })
-      .delete()
-      .then(() => {
-        data.files = data.files.filter((file) => file.id !== id);
-      });
+    api.files[':id'].$delete({ param: { id } }).then(() => {
+      data.files = data.files.filter((file) => file.id !== id);
+    });
   };
 </script>
 

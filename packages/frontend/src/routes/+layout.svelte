@@ -14,11 +14,18 @@
   let user: unknown;
 
   onMount(async () => {
-    const res = await api.me.get();
+    const res = await api.me.$get();
     if (res.status === 401) {
       user = null;
     }
-    user = res.data?.user ?? null;
+    const data = await res.json();
+
+    if ('error' in data) {
+      user = null;
+      return;
+    }
+
+    user = data.user ?? null;
   });
 </script>
 
@@ -46,10 +53,6 @@
 
 {#if !user}
   <div class="h-full flex items-center justify-center">
-    <Button
-      href={process.env.NODE_ENV === 'development'
-        ? 'http://localhost:3000/sign-in'
-        : 'https://nuwm-enrollee-be.fly.dev/sign-in'}>Sign In</Button
-    >
+    <Button href={`${import.meta.env.VITE_SERVER_URL}/sign-in`}>Sign In</Button>
   </div>
 {/if}
