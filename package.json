@@ -7,7 +7,6 @@
     "packages/frontend"
   ],
   "scripts": {
-    "postinstall": "pnpm i sharp",
     "build:be": "cd packages/backend && pnpm run build",
     "start:be": "cd packages/backend && pnpm run start",
     "dev": "turbo dev",

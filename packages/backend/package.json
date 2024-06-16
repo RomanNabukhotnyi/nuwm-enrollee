@@ -4,6 +4,7 @@
   "type": "module",
   "module": "src/index.ts",
   "scripts": {
+    "postinstall": "pnpm i sharp",
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "tsx dist/index.cjs",
     "build": "NODE_ENV=production tsup",
