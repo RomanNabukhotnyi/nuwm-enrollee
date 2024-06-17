@@ -63,7 +63,7 @@ const main = async () => {
       const sections = await db
         .select()
         .from(documentSections)
-        .where(sql`${documentSections.embedding} <#> ${embeddingString} < 0.7`)
+        .where(sql`${documentSections.embedding} <#> ${embeddingString} < 0.9`)
         .orderBy(sql`${documentSections.embedding} <#> ${embeddingString}`)
         .limit(10);
 
